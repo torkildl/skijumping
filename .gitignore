@@ -1,0 +1,7 @@
+Data/*
+*.aux
+*.tex
+*.Rproj*
+*.out
+manuscript_files/*
+Older-data/*
