@@ -4,3 +4,4 @@
 *.out
 manuscript_files/*
 Older-data/*
+.Rproj.user
