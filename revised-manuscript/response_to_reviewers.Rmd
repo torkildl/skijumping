@@ -118,8 +118,9 @@ Thank you for pointing this out. This was an error on our part. It is corrected 
 
 > *Home advantage is divided into a physical effect and a social effect. These constructs should be explained more clearly (see e.g. p. 10). I suspect that - according to the state of research (referenced on p. 5) - actual factors influencing performance exist (the sporting performance in the home country is actually on average higher than in a host country), but also influenced due to social pressure from the audience on the adjudicators, which can be assessed as higher in the home countries of the athletes than in the host countries (this is also explained on p. 10, this would then again be a distortion of judgement).*
 
-We have expanded our discussion of home field advantages somewhat in this version, and make amongst other things the discintion you point to in your comment. 
-TODO: OR SHOULD WE JUST DROP HOME FIELD?
+In order to provide a more focused and coherent manuscript, we have removed the home field advantage aspect from this paper. Our decision was based on the fact that we expanded the nationalist bias analysis, and this expanded the scope of the work outside of a single article. We may proceed with a deeper analysis of home advantages in a subsequent paper.
+
+If the Editor and the reviewers found much promise in the home field advantage component, we are of course willing to put it back in.
 
 > *It is expectable that the more variables are put into a model, the lower the relative explanatory share of a single variable. It would be interesting if the explanatory value of a variable remained high despite the control of disturbing variables (secondary variance).*
 
