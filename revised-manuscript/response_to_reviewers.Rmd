@@ -62,7 +62,7 @@ Thank you! In this version, we have only changed small bits of material to make 
 
 >*8. Sources of national differences in tendencies of national bias (french vs. others) -- what may they be? The Editor suggests that the potential growth in the sport nationally may be a factor.*
 
-We now build upon sociological theory on evaluation to propose hypotheses on variation in biases in the field of ski jumping.
+We now build more explicitly upon sociological theory on evaluation to propose hypotheses on variation in biases in the field of ski jumping.
 
 >*9. Our estimates of bias are less than Zitzewitz', which may be the result of a general professionalization of the sport. New data may cast further light on this issue.*
 
@@ -84,7 +84,7 @@ The appropriate information has been added for these references.
 
 \smallskip
 
-We are grateful to the Editor for her/his comments on our manuscript. They helped us writerethink and rewrite the work in a way that we believe is a stronger contribution to the field. Thank you!
+We are grateful to the Editor for her/his comments on our manuscript. They helped us rethink and rewrite the work in a way that we believe is a stronger contribution to the field. Thank you!
 
 
 # Responses to comments made by reviewer \#2
@@ -99,14 +99,17 @@ Let us first express our thanks for the Reviewer's thoughtful comments on our ma
 
 Yes, it is typical that when a new variable (Z) is introduced the regression coefficient of a first variable (X) may change both magnitude and sign if the new variable is correlated with X. In our case, it may that competitors from certain nations are better on average than competitors from other nations, and it may be that the above-average nations also are more often represented on judge panels. This will induce a correlation between the same-nation indicator (X) and qualities of the performance (Z). Controlling for Z, should then reduce the magnitude of the regression coeffient for X. 
 
-Our estimate from model 1, the "naïve" model, may be overestimating the strength of bias for such reasons, and in model 2 we control for *all* unobserved characteristics of the jump that affects the judge scores. 
+Our estimate from model 1, the "naïve" model, may be overestimating the strength of bias for such reasons, and in model 2 we control for *all* unobserved characteristics of the jump that affects the judge scores by way of jump fixed-effects. 
 
 > *3) Finally, in a third hypothesis, cultural influences on stylistic elements are assumed (and I wonder whether this would not be an explanation for the variance of the variable "national influence"). So why is this separated? The authors differentiate between nations with a strong tradition of ski jumping and those with a rather weak tradition. In a first step there are some points critical to mention:*
 
 > *1) The authors use a fixed effects-term for each jump in their regression-model to remove confounding factors and thereby estimate national bias more precisely. This is done under the assumption that the other - in this case four - judges give an unbiased score. Although this often so called „true score" is the common modus operandi in terms of the questions to be answered, the authors are to be pointed out on the fact that this assumption only holds true if no set of five judges contains two or more judges of identical nationality. Specific rules from the regarded years concerning the composition of the judging panel in ski jumping could be presented to support the assumption in that sense.*
 
-Yes, we use a fixed-effects term for each jump to remove confounding factors from characteristics of the jump. However, we believe this model does _not_ rely on an assumption of unbiasedness of the other four scores nor an assumption that there is only one judge from the competitor's nation in the judge panel. If there are multiple judges from the competitor's country, there will simply be multiple 1's among the five observations that make up the observations of judge scores for each jump. What identifies the B (in the revised ms denoted $\beta$) parameter in the models, is the within-jump *variation* in judge-competitor correspondence. The identification criterion is that the data must include  some performances (jumps) where there is one (or more) judges from the same nation as the competitor, and thus scores 1 on the dummy variable for national bias. As we have quite a few of such performances, we are able to identify and estimate an effect of nationalistic bias on judge scores.
+Yes, we use a fixed-effects term for each jump to remove confounding factors from characteristics of the jump. 
 
+However, we believe this model does _not_ rely on an that there is only one judge from the competitor's nation in the judge panel. If there are multiple judges from the competitor's country, there will simply be multiple 1's among the five observations that make up the observations of judge scores for each jump. What identifies the B (in the revised ms denoted $\beta$) parameter in the models, is the within-jump *variation* in judge-competitor correspondence. The identification criterion is that the data must include  some performances (jumps) where there is one (or more) judges from the same nation as the competitor, and thus scores 1 on the dummy variable for national bias. As we have quite a few of such performances, we are able to identify and estimate an effect of nationalistic bias on judge scores.
+
+The assumption of unbiasedness among other panel judges can clearly be questioned, and it is possible to estimate counteracting "compensating biases" (á la Zitzewitz 2006). Our experiments did not find that results depended on inclusion of such compensating biases. 
 
 > *2) Additionally the first part oft the third hypothesis proposed by the authors seems not to be testable the way it is formulated, it is rather formulated as an additional assumption.  („A third hypothesis is that this bias may be partly due to cultural influences on stylistic elements,[…]"). For the second part of the third hypothesis however, there was no test of the hypothesis performed, nor was the concept of differing countries according to tradition for ski jumping further elucidated.*
 

@@ -11,7 +11,7 @@ author:
   name: Juho Härkönen
 date: "14 september 2017"
 keywords: nationalist bias, skijumping, judges, fixed effects
-abstract: "High stakes and prizes in international sports competitions necessitate efficiently identifying legitimate winners. Illegitimate biases of non-independent judges represent a major threat to the legitimacy of international competitions. Judges’ nationalities represent one source of bias, as they may prefer athletes of their own nation. Judges may also favour athletes competing within their home countries, creating another potential bias. Such biases, conscious or unconscious, may affect the outcomes of competitions. The literature offers no complete consensus on the magnitude of such biases, hence not whether they affect competition outcomes or not. In this paper, we shed light on these problems, using international ski jumping as an example. We draw on data from the FIS World Cup competitions in the 2006-2008 and 2015-2016 seasons, and employ several fixed-effects based regression designs. Our results reaffirm suspicions of national bias in major ski jumping competitions, but also show their magnitude is too little to be of major relevance to competition outcomes. There is a trend towards smaller nationalist biases over time, which suggests that increasing professionalization of sports also may limit the influence of subjective and nationalist impulses."
+abstract: "Illegitimate biases of non-independent judges represent a threat to the legitimacy of international sport competitions. Judges’ nationalities represent one source of bias, as they consciously or subconsciously may prefer athletes from their own nation. Such biases may affect the outcomes of competitions. The literature offers no complete consensus on the magnitude, origin and stability of such biases. In this paper, we shed light on these problems, using international ski jumping as an example. We draw on data from the FIS World Cup competitions in the 2006-2008 and 2015-2016 seasons and estimate a series of fixed-effects models to test hypotheses on nationalist biases. Our results reaffirm suspicions of nationalist bias in major ski jumping competitions, but also show their magnitude is too little to be of major relevance to competition outcomes. The biases vary between nations, but do not change markedly over the study period. "
 thanks: "The authors are grateful for financial support from the Småforsk programme at the University of Oslo, and to Marte Knutsson for research assistance in the early phase of establishing the data set.  At publication time, all code and material used to produce this paper (with the exception of the proprietary data) will be available. The authors are also grateful to Matti Nykänen for being an enduring source of inspiration in many aspects of our lives."
 output:
   pdf_document:
@@ -46,6 +46,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(ggthemes)
+library(ggrepel)
 library(here)
 library(broom)
 library(purrr)
@@ -171,30 +172,11 @@ model3 <- felm(data = all_scores, judge ~ relevel(countrybias_ord,ref = "NON") |
 summary(model3)
 
 
-# Model 4a: Estimating changes over time
-model4a <- felm(data = all_scores, judge ~ natbias + natbias*seasondummy + seasondummy| jumpid)
-summary(model4a)
-
-# Model 4b: Estimating changes in leniency and national variance
-
-
-
-
-
-## Alternative model 4 with individual-level bias estimates. Not included in the final paper.
-model4_indjudges <- felm(data=all_scores, formula=judge ~  natbias*judge_name | jumpid) 
-model4_indjudges %>% 
-    tidy %>% 
-    mutate(natbias = if_else(str_detect(term,"natbias"),"interaction","main")) %>% 
-    mutate(judge_name = str_sub(term, start=1+((natbias=="interaction")*8))) %>% 
-    mutate(judge_name = if_else(judge_name=="", "overall",judge_name)) %>% 
-    select(natbias, judge_name, estimate) %>% 
-    group_by(judge_name) %>% 
-    spread(key=natbias, estimate) %>% 
-    rename(bias = interaction, leniency = main) %>% 
-    ungroup %>% 
-    mutate(judge_name = str_sub(judge_name,start=11)) %>% 
-    head
+# Model 4: Estimating changes over time in national bias
+model4 <- felm(data = all_scores, judge ~ natbias + natbias*seasondummy + seasondummy| jumpid)
+summary(model4)
+bias_main <- tidy(model4) %>% filter(term=="natbias") %>% pull(estimate)
+bias_interact <- tidy(model4) %>% filter(term=="natbias:seasondummy") %>% pull(estimate)
 
 ```
 
@@ -218,7 +200,6 @@ Research on biases in basketball illustrates the breadth of the field. In their 
 Two related papers explore a potential racial bias among NBA referees, and its consequences for betting markets [@price_racial_2010, @larsen_racial_2008]. The authors note that there is a significant difference between fouls called when the athlete and referees are of the same race versus when they are not. The difference is large enough to be an important factor in determining game outcomes, making it a viable tactic to pursue in betting markets. Analysing data from two seasons, they find that when the majority of judges are white, betting on the team that has more minutes (expected) played by white players will beat the point spread over 50% of the time.
 
 
-
 Nationalistic or cultural bias, where judges favour athletes from their home country or culturally similar ones in a systematic way would be most evident in certain nationalistic competitions such as world cups or Olympics. Evidence of these kinds of biases have been found in many different sports, including rugby [@page_evidence_2010] , muay thai [@myers_evidence_2006], figure skating [@yang_cultural_2006], gymnastics [@callahan_cultural_2016], and surfing [@sampaio_three_2012].
 
 In their study of the 2000 Olympic diving competition, Emerson, Seltzer and Lin [@emerson_assessing_2009] found evidence of strong biases in some of the judges; both nationalistic ones, and against competitors from certain other nations. Based on their model, they re-estimated the results, removing the biases to obtain the objective quality of the dive, and isolated a case where the medals might have changed hands – had the judges been completely unbiased. Zitzewitz [-@zitzewitz_nationalism_2006] made a similar analysis of datasets from the 2002 Salt Lake City Winter Olympics and found evidence of nationalistic biases in both ski jumping and figure skating. Evidence of bloc voting and vote trading was also found in figure skating where Germany, USA, Canada and Italy are more likely to be negatively biased towards Russia, Ukraine, France and Poland, and vice versa [@zitzewitz_nationalism_2006]. Bloc voting in figure skating is nothing new, however. Seltzer and Glass [-@seltzer_international_1991], for example, documented consistent bloc voting along cold-war lines in addition to nationalistic biases in the Winter Olympic games held from 1968 till 1988. 
@@ -232,7 +213,9 @@ Our reading of the empirical literature on nationalistic and other evaluative bi
 
 ### The social psychological mechanism: Implicit or explicit nationalist bias
 
-The first social psychological mechanism is the simple folk psychology theory of  judges' nationalistic impulses at the subconscious or even conscious level. They prefer their own to win, and give higher scores to those athletes. Importantly, this theoretical mechanism does not by itself predict variation in the magnitude of biases across countries. It could in princple be combined with other theoretical ideas to arrive at predictions about any such variation.
+The first social psychological mechanism is the simple folk psychology theory of  judges' nationalistic impulses at the subconscious or even conscious level. They prefer their own to win, and give higher scores to those athletes.  Thus crude form of nationalist bias is similar to what has denoted taste-based discrimination, which refers to individuals’ preferences for certain categories of people and is often used to explain discrimination against women or ethnic minorities in the labour market [@becker1957economics]. 
+
+Applied to ski jumping, the mechanism refers to judges’ conscious nationalistic impulses that bias their evaluations in favour of their own, and against competitors. A subtler form of this mechanism leads to subconscious bias for jumpers from one’s own country, where own preferences or social expectations lead judges to biased evaluations [@bassett2005rating, @campbell1996nonparametric]. Importantly, this theoretical mechanism does not by itself predict variation in the magnitude of biases across countries. It can be combined with other theoretical ideas to arrive at predictions about any such variation.
 
 ### Theory of evaluation work, as applied to nationalist biases in ski jumping
 
@@ -240,7 +223,7 @@ The second way of theorizing bias is to consider the role of judges and their ef
 
 The room for evaluation decides what is relevant and good in a field. The evaluative room may be wide, and allow for many different evaluative statements, or narrow, and restrict evaluative statements. The main point is that the evaluative room allows for criticisms by field actors that in turn may affect the structure of the room for evaluation. Criticisms within the room for evaluation are recognized as forces of change in organizations and society at large. Actors cannot expect to have any criticism heard, and it must be recognized by multiple actors before it is heard. If enough actors repeat and (re)formulate  a criticism, it will potentially lead to change and a new room for evaluation.
 
-Applied to ski jumping as a field, judges' practices for scoring represents the room for evaluation. Within this room there are likely coexisting practices that may be correlated with judges' nationalities, giving rise to national variations in judge scores. Some countries, for example, Norway and Finland, enjoy long ski jumping traditions, whereas neighbouring Sweden, an otherwise similar country, does not. Most likely the long traditions also imply that judges from these countries to a larger degree than Swedish judges will define the room for evalution. This became salient when Jan Boklöv, a Swede, pioneered the V-style in ski jumping. His style was not comme-il-faut among judges and competitors in ski jumping at the time, and thus heavily penalized by judges. Eventually he won competitions, due to the technical advantages of the V-style, and other actors started to mimic the style [@muller_performance_2008]. These changes then led to a change in the room for evaluations, where V-style was accepted and it is currently completely dominant in the field.
+Applied to ski jumping as a field, judges' practices for scoring represents the room for evaluation. Within this room there are likely coexisting practices that may be correlated with judges' nationalities, giving rise to national variations in judge scores. Some countries, for example, Norway and Finland, enjoy long ski jumping traditions, whereas neighbouring Sweden, an otherwise similar country, does not. Most likely the long traditions also imply that judges from these countries to a larger degree than Swedish judges will define the room for evalution. This became salient when Jan Boklöv, a Swede, pioneered the V-style in ski jumping. His style was not comme-il-faut among judges and competitors in ski jumping at the time, and thus heavily penalized by judges. Eventually he won competitions, due to the technical advantages of the V-style, and other actors started to mimic the style [@muller_performance_2008]. These changes then led to a change in the room for evaluations, where V-style was accepted and it is currently completely dominant in the field [@pfister2007sportification].
 
 Mere national variation in judge scoring practices does not yield nationalistic biases in individual scores. However, when we also consider the fact that competitors are trained and socialized in their respective national ski jumping associations and competitions. This implies that young competitors share the more experienced judges' evaluative standards, and in turn this leads to nationalistic biases in judge scoring.
 
@@ -277,7 +260,7 @@ Our fourth hypothesis states that nationalistic bias in ski jumping evaluations 
 
 # DATA AND METHODS
 
-To test the hypotheses proposed above, we use data from the FIS World Cup competitions in ski jumping from the 2006-2007 and 2007-2008 seasons as well as from the 2015-2016 seasons. The original data for 2006-2007 and 2007-2008 seasons were downloaded from the FIS web site, coded, edited for errors, and collated into complete data set for analysis. For the season 2015-2016, we wrote automated web scraping software that identified relevant PDF files on the FIS servers, downloaded these files, and scraped them for results according to our pre-specified instructions. In accordance with norms of open social science, the software used to download and scrape the PDF files are documented in the GitHub repository associated with this article.[^1: See https://github.com/torkildl/skijumping for data and software.]
+To test the hypotheses proposed above, we use data from the FIS World Cup competitions in ski jumping from the 2006-2007 and 2007-2008 seasons as well as from the 2015-2016 seasons. The original data for 2006-2007 and 2007-2008 seasons were downloaded from the FIS web site, coded, edited for errors, and collated into complete data set for analysis. For the season 2015-2016, we wrote automated web scraping software that identified relevant PDF files on the FIS servers, downloaded these files, and scraped them for results according to our pre-specified instructions. In accordance with norms of open social science, the software used to download and scrape the PDF files are documented in the GitHub repository associated with this article.
 
 Both data sets include detailed information on each jump in each competition, including the five individual judge scores from the jump along with the identity and nationality of each judge in each competition. Characteristics of the jump such as speed and length are included, as well as the points allotted. The total points for the jump is the sum of the length score and the stylistic score. We also know where and when the competition was held. For the later period, additional details on wind, starting gate and point adjustments for such conditions are also available.
 
@@ -315,9 +298,9 @@ s_{ijp} = B ∙ \phi(I=J) + \epsilon_{ijp}
 
 where $s_{ijp}$ is the score given by judge $j$, on performance $p$, by a certain athlete $i$, and $\epsilon_{ijp}$ is the error term. The $B$ coefficient in this model estimates the difference in expected score if the athlete and the judge come from the same country. Hypothesis \#1 is tested by assessing the direction and magnitude of $B$.
 
-Such a model does not take into account relevant differences between nations. A Norwegian judge may give higher scores to a fellow countryman’s performance due to a correspondence of their definitions of valuable stylistic elements, in accordance with national variations in evaluation practices.
+Such a model does not take into account other relevant differences between nations. A Norwegian judge may give higher scores to a fellow countryman’s performance due to a correspondence of their definitions of valuable stylistic elements, in accordance with national variations in evaluation practices.
 
-Our next step is an attempt to remove such confounding factors, by exploiting the other judges’ evaluations of the same jump in estimation of nationalistic bias. Assuming that the other four judges give an unbiased score, a more precise way to estimate the bias is to add a fixed effects-term for each jump to the model (in effect including a dummy variable for each jump). In such a model, our estimator is based on individual judges’ score deviances from the average score for each jump. If the average score represents a more objective assessment of the performance, deviations from it can be interpreted as signs of bias. Our second model is therefore
+Our next step is an attempt to remove such factors, by exploiting the other judges’ evaluations of the same jump in estimation of nationalistic bias. Assuming that the other four judges give an unbiased score, a more precise way to estimate the bias is to add a fixed effects-term for each jump to the model (in effect including a dummy variable for each jump). In such a model, our estimator is based on individual judges’ score deviances from the average score for each jump. If the average score represents a more objective assessment of the performance, deviations from it can be interpreted as signs of bias. Our second model is therefore
 
 \begin{equation}
 s_{ijp} = B∙\phi(I=J) + q_p + \epsilon_{ijp}
@@ -331,7 +314,7 @@ A limitation of the second model is that it does not capture any inherent lenien
 s_{ijp} = B∙\phi(I=J) + q_p + l_j + \epsilon_{ijp}
 \end{equation}
 
-This model is an improvement over the previous ones, but limitations still remain. For example, there could be so-called compensating biases, where other judges on thethe same panel as a suspected biased judge compensate by lowering their scores when they know that one of the others will up his score. Finally, the model also assumes that bias is constant across all judges from all nations, a crucial assumption that we subsequently question in hypothesis \#3. 
+This model is an improvement over the previous ones, but limitations still remain. For example, there could be so-called compensating biases, where other judges on the same panel as a suspected biased judge compensate by lowering their scores when they know that one of the others will up his score. Finally, the model also assumes that bias is constant across all judges from all nations, a crucial assumption that we subsequently question in hypothesis \#3. 
 
 ## Variations across nations and time periods
 
@@ -341,36 +324,37 @@ In order to test our third hypothesis, we want to allow for variations in bias b
 s_{ijp} = B_{j}∙(L_{j}∙\phi(I=J)) + q_p + \epsilon_{ijp}
 \end{equation}
 
-where $L_j$ is an added judge country fixed-effect. The nation-specific estimates for B provide an assessment of the average bias in scores by judges from different countries.\footnote{In principle, we could obtain individual bias estimates for each judge and then analyze these as samples of judge biases scores grouped by judges' nationalities. This would be very demanding of our data and experiments indicate that estimates would be very imprecise. We thus refrain from doing this, and only allow the bias to vary between the different judge nationalities.} We also rank countries by our selected instrument of ski jumping history, namely the historical record of Olympic ski jumping gold medals in the decades before the seasons we study. The hypothesis is tested by estimating the Spearman rank correlation $\rho$ across the countries. A negative correlation indicates support for the hypothesis.
+where $L_j$ is an added judge country fixed-effect. The nation-specific estimates for B provide an assessment of the average bias in scores by judges from different countries.\footnote{In principle, we could obtain individual bias estimates for each judge and then analyze these as samples of judge biases scores grouped by judges' nationalities. This would be very demanding of our data and experiments indicate that estimates would be very imprecise. We thus refrain from doing this, and only allow the bias to vary between the different judge nationalities.} We also rank countries by our selected instrument of ski jumping history, namely the historical record of Olympic ski jumping gold medals in the decades up to and including 2002 (before the seasons we study. This medal variable was constructed by scraping existing public statistics on Olympic medals in ski jumping competitions (men's Large Hill and Normal Hill only), and calculating how many medals each country has collected. The hypothesis is tested by estimating the Spearman rank correlation $\rho$ across the countries. A negative correlation indicates support for the hypothesis.
 
-Our fourth hypothesis regards potential changes in the variation of nationalist bias over time. In order to assess changes in the variation in nationalist bias, we estimate a model akin to model \#2, but with an added interaction with a dummy representing the second season (with the first season as a reference group). The parameter estimate for this interaction effect, $\Gamma$ provides a direct test of hypothesis with regard to changes in nationalist bias. The model is written as 
+Our fourth hypothesis regards potential changes in the variation of nationalist bias over time. In order to assess changes in the variation in nationalist bias, we estimate a model akin to model \#2, but with an added interaction with a dummy representing the second season (with the first season as a reference group). The parameter estimate for this interaction effect, $\gamma$ provides a direct test of hypothesis with regard to changes in nationalist bias. The model is written as 
 
 \begin{equation}
-s_{ijp} = B∙\phi(I=J) + \Gamma∙Y∙\phi(I=J)+ q_p + \epsilon_{ijp}
+s_{ijp} = B_{t_1}∙\phi(I=J) + \gamma∙B_{t_2}∙\phi(I=J)+ q_p + \epsilon_{ijp}
 \end{equation}
 
+In principle, this model could include also a general tendency in judge leniency over time, but this term will be subsumed due to perfect linearity with sets of jump fixed effects (as specific jumps only take place in one season).
 
 
 # RESULTS AND DISCUSSION
 
-Our analysis of nationalistic bias proceeds in four steps, with each step corresponding to a test of one of our four hypotheses.
+Our analysis of nationalistic bias proceeds in several steps. We first assess the first two hypotheses on the mere existence of nationalistic biases, and subsequently move on to the last two hypotheses on variation across nations and time periods.
 
 ## Nationalistic biases in judge scores
 
-Table 2 presents the results from the first three estimations. Our first model yields a positive and statistically significant estimate: judges award an average of 0.146 extra points to jumpers from their home country. This is approximately one-third of the minimum increment in judge scores in ski jumping (0.5). Compared with within-jump variance it only amounts to a quarter of a standard deviation. This result already suggests that the magnitude of nationalistic bias in judges’ scores is limited. The estimate may be biased by, for example, cultural and historical differences between countries that lead to an over- or underappreciation of certain styles. 
+Table 2 presents the results from the first three estimations. Our first model yields a positive and statistically significant estimate: judges award an average of 0.136 extra points to jumpers from their home country. This is nearly one-third of the minimum increment in judge scores in ski jumping (0.5 points). Compared with within-jump variance it only amounts to a quarter of a standard deviation. This result already suggests that the magnitude of nationalistic bias in judges’ scores is limited. The estimate may be biased by, for example, cultural and historical differences between countries that lead to an over- or underappreciation of certain styles. 
 
 \begin{landscape}
 ```{r tab2, echo=FALSE, results='asis'}
 stargazer(model1, model2, model2b, out.header=FALSE, header=FALSE,
     single.row=TRUE,
-    column.labels = c("Model 1: Naïve", "Model 2a: Within-jump", "Model 3a: Within-judge"),
+    column.labels = c("Model 1: Naïve", "Model 2a: Within-jump", "Model 2b: Within-judge"),
     title="Results from regression models of national bias",
     covariate.labels = c("National bias"),
     dep.var.caption  = "", dep.var.labels.include = FALSE,
     model.numbers = FALSE, model.names = FALSE,
     add.lines = c(" "),
     notes.align="l",
-    notes = c("In models 2 and 2b, the intercept is suppressed by the fixed effects estimation procedure."),
+    notes = c("In models 2a and 2b, the intercept is suppressed by the fixed effects estimation procedure."),
     notes.append=TRUE,
     df = TRUE, decimal.mark =".",
     ci=TRUE, ci.level=0.95, ci.separator = "  ",
@@ -380,16 +364,17 @@ stargazer(model1, model2, model2b, out.header=FALSE, header=FALSE,
 ```
 \end{landscape}
 
+This was the concern of the second hypothesis, were we assumed that the bias level would decrease once we controlled for other, unobserved characteristics of the jump. Model 2b is a response to exactly this challenge, and provides a within-jump estimate of the nationalistic bias. In this model, the coefficient is estimated at 0.065, markedly lower than in the first model. It is statistically significant at the 0.1% level. The magnitude is low, but there is clearly a tendency towards nationalistic bias. In our adjusted second model \#2b, where we also include measures of individual judges' leniency, we obtain a comparable estimate of nationalistic bias (0.075, sig. at 0.1\% level).
 
-This was the concern of the second hypothesis, were we assumed that the bias level would decrease once we controlled for other, unobserved characteristics of the jump. The second model takes up exactly this challenge, and provides a within-jump estimate of the nationalistic bias. In this model, the coefficient is estimated at 0.068, markedly lower than in the first model. It is statistically significant at the 0.1% level. The magnitude is low, but there is clearly a tendency towards nationalistic bias. In our adjusted second model \#2b, where we also include measures of individual judges' leniency, we obtain a comparable estimate of nationalistic bias.
-
+The conclusion thus far is that there are nationalistic biases in evaluations made by judges in the FIS World Cup competitions over the last decades. These biases do not disappear once we control rigorously for unobserved characteristics of both the jump itself and the judges. The first two hypotheses are supported by the data analysis. We do not know from these results, whether the remaining nationalistic bias is due to the social psychological, cultural-historical or the differential-professionalization mechanisms. It seems fair to allow all three to play a role.  
 
 ## Variations in bias across nations and time periods
 
-
 Our third hypothesis concerned variation in nationalistic biases for judges from different countries, and whether such variation is correlated with an indicator of the historical importance of ski jumping in that country.
 
-Our third model allowed estimating such variation, and the results are shown in Figure 2. Judges from Russia, the United States and France appear most biased. Norwegian and Slovakian judges seems to hold a negative nationalistic bias, where same-nation jumpers are punished more severely than others. Overall, the estimated biases seem fairly small and in several cases not statistically significant. It is difficult to provide a substantive interpretation of this variation in national biases, but it is nevertheless clear that the biases are relatively small in magnitude. The caseof Slovakia is curious, as this country show particularly strong negative bias. The estimate lie well outside of the rest of the estimates, and we will treat it as an outlier in the following analysis.
+Our third model allowed estimating such variation, and the results are shown in Figure 2. Judges from Russia, the United States and France appear most biased. Norwegian and Slovakian judges seems to hold a negative nationalistic bias, where same-nation jumpers are punished more severely than others. Overall, the estimated biases seem fairly small and in several cases not statistically significant. It is difficult to provide a substantive interpretation of this variation in national biases, but it is nevertheless clear that the biases are relatively small in magnitude. 
+
+The case of Slovakia is curious. This country's judges show a particularly strong negative bias. As the estimate lie well outside of the rest of the sample, it may well be reasonable to treat it as an outlier in the following analysis.
 
 \bigskip
 ```{r fig2, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.width=5, fig.align="center"}
@@ -412,7 +397,9 @@ figure2
 ```
 \bigskip
 
-To properly test the third hypothesis, we then estimate the rank correlation of the nation-specific bias coefficient and the nation's Olympic medal harvest. This exercise was done by scraping existing public statistics on Olympic medals, and calculating how many medals each country has collected.  
+By itself, this piece of evidence is not enough to test hypothesis \#3, as it also suggests several specific mechanisms for the variation in biases, namely cultural-historical legacies and differential professionalization. According to these mechanisms, the bias should be lower in countries where ski jumping has a stronger historical role in sports and where the degree of professionalization is the highest. We are unable to directly adjudicate between these two mechanisms, as there is likely a strong positive correlation between the place of ski jumping in the national sports field and the degree of professionalization.
+
+To test the third hypothesis, we estimate the rank correlation of the nation-specific bias coefficient and the nation's Olympic medal harvest. 
 
 ```{r scrape-gold, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 library(rvest)
@@ -455,20 +442,14 @@ goldindex <- goldindex %>% add_row(country="CZE", medals=cze)
 
 ranking <- left_join(goldindex, nationbias, by="country")
 
-figure3 <- ggplot(ranking, aes(x=medals, y=estimate, label=country)) + 
+figure3 <- ggplot(filter(ranking, country!="SVK"), aes(x=medals, y=estimate, label=country)) + 
     geom_point(size=2) + 
-    geom_smooth(method="lm", se=F) +
-    geom_text(nudge_x = 1) +
-    theme_minimal() +
-    labs(x="Olympic medals up to 2002", y="Nationalist bias estimate", title="3a. Olympic medals and bias estimates")
+    geom_smooth(method="lm", se=F, color="brown") +
+    geom_text_repel() +
+    xlab("Olympic medals") + ylab("Strength of bias") +
+    ggtitle("Figure 3. Strengh of bias and Olympic medals") + 
+    theme_minimal()
 
-figure3b <-ggplot(filter(ranking, country!="SVK"), aes(x=medals, y=estimate, label=country)) + 
-    geom_point(size=2) + 
-    geom_smooth(method="lm", se=F) +
-    geom_text(nudge_x = 1) +
-    theme_minimal() +
-    labs(x="Olympic medals up to 2002", y="Nationalist bias estimate", title="3b. Outlier removed")
- 
 spearman <- cor.test( ~ medals + estimate, 
          data=ranking,
          method = "spearman",
@@ -477,32 +458,61 @@ spearman <- cor.test( ~ medals + estimate,
 
 ```
 
-The Spearman Rho rank correlation coefficient of nationalist bias and Olympic medals was estimated at ```spearman$estimate``` which thus supports the hypothesis that the magnitude of bias is negatively related to the historical importance of ski jumping in the country (as measured by our index of Olympic medals).
+The Spearman $\rho$ rank correlation coefficient of nationalist bias and Olympic medals was estimated at ```r round(spearman$estimate,3)``` which thus supports the hypothesis that the magnitude of bias is negatively related to the Olympic medal harvest for the country. If we can assume that historical medal harvest is postively related to the relative place of ski jumping in the national sports field and/or the degree of professionalization of ski jumping, our third hypothesis must be considered supported by the data.
 
-Figure 3 shows the scatterplot between Olympic medals and natonalistic bias estimates, with and without the outlier Slovakia included.
+Figure 3 shows the scatterplot between Olympic medals and natonalistic bias estimates. An identical scatterplot that also includes the outlier Slovakia, would yield a slightly less negative relationship.
+
 \smallskip
 
-```{r figthree, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
-library(patchwork)
-
-figure3 + figure3b + plot_layout(ncol = 2, widths = c(1,1))
-
+```{r figthree, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=5, fig.align="center"}
+figure3
 ```
+
+We now turn to our fourth hypothesis, which stated that nationalistic biases would decrease over time. We test this hypothesis by estimating a fourth model that includes an interaction coefficient with time period. We thus obtain two coefficients for national bias: a main effect and an interaction effect. The latter quantifies the change in bias from the 2006-2008 seasons to the 2015-2016 season.
+\newpage
+
+```{r tab3, echo=FALSE, results='asis'}
+stargazer(model4, out.header=FALSE, header=FALSE,
+    single.row=TRUE,
+    column.labels = c("Model 4: Change over time"),
+    title="Results from regression models of change over time in nationalistic bias",
+    covariate.labels = c("Main bias effect","","Interaction with time"),
+    dep.var.caption  = "", dep.var.labels.include = FALSE,
+    model.numbers = FALSE, model.names = FALSE,
+    add.lines = c(" "),
+    notes.align="l",
+    notes = c("The intercept is suppressed by the fixed effects estimation procedure."),
+    notes.append=TRUE,
+    df = TRUE, decimal.mark =".",
+    ci=TRUE, ci.level=0.95, ci.separator = "  ",
+    omit.stat=NULL,
+    star.cutoffs = c(0.05,0.01,0.001)
+    )
+```
+
+As can be seen from Table 3, the interaction effect is not measurably different from zero. It is estimated at  ```r round(bias_interact,3)``` which is a miniscule magnitude relative to the main effect of ```r round(bias_main,3)```. All in all, there does not seem to be much change in nationalistic biases over the two time periods our data set covers. The fourth hypothesis must thus be rejected. This implies that if there is an ongoing professionalization of the sport, it has not resulted in lower nationalistic biases among judges. 
+
 
 # Our results in light of the extant literature
 
+In sum, we have learned that there are nationalistic biases in ski jumping evaluations. These biases persist when controlling for characteristics of the performance and individual judges.
+The bias is less strong among nations with a historical culture of ski jumping. The bias have not declined over a decade of potentially increasing professionalization.
+
+What can we learn from these results in totality? At the very least, we can speculate about the origin of nationalistic biases. The simplistic social pscyhological mechanism is supported by the data, by the mere existence of biases. However, as the social psychology should not be very different across these nations, the variation among nations remains a puzzle. The absence of changes over time in bias strength is weak evidence against the idea that biases are results of "unprofessional practices" and will disappear once professionalization increases. A possibility that remains is that, as biases are stronger among nations where ski jumping is less important in the national sports field, judges (unconsciously) from such nations give higher scores to up the chance of notable, positive results and support their sport on the national scene. 
+
 Our bias estimates were smaller, however, than for example those reported from the Salt Lake City 2002 Winter Olympics [@zitzewitz_nationalism_2006]. The finding of generally smaller effects than those previously reported is intriguing and point to a potentially important element affecting subjective evaluation of performances: when stakes are higher, as in the prestigious Olympic games, the potential influence of biased judgments is likewise increased. The reason our results show less biases than previous research may thus be that the stakes in each of the World Cup series events are lower than the stakes in e.g. Olympic events [cf. @zitzewitz_nationalism_2006]. The mechanisms that lead to biases are somehow more often invoked or invoked in a more influential version when stakes are higher. Another potential explanation points to individual judges’ career considerations, as objective performance in regular contests can later be rewarded by participation in higher prestige events, such as the Olympics. Our results thus complement Zitzewitz’s (2006) findings by pointing out situations in which biases are more (less) likely. Future research could compare competitions that differ in status and prizes, for example competitions at the regional and the national levels, and further test this idea of bias as emergent in high-stakes competitions.
 
-Our estimates of nationalistic biases were also small enough that they would not alter the rankings in any of the contests. A comparison with the within-jump variance indicates that the bias only amounts to around a quarter of a standard deviation (cf. Model 3 in Table 2). In other words, the variation between the judges’ scores that is not due to nationalistic bias is much larger. If this variation is considered to be random deviations from a “true” score, it is clear that competitors should worry more about chance variations in judges’ evaluations (and possible idiosyncratic opinions) than about nationalist biases affecting the outcome of the competition. 
-
+Our estimates of nationalistic biases were also small enough that they would not alter the rankings in any of the contests. A comparison with the within-jump variance indicates that the bias only amounts to around a quarter of a standard deviation (cf. Model 3 in Table 2). In other words, the variation between the judges’ scores that is not due to nationalistic bias is much larger. If this variation is considered to be random deviations from a “true” score, it is clear that competitors should worry more about chance variations in judges’ evaluations (and possible idiosyncratic opinions) than about nationalist biases affecting the outcome of the competition. The ski jumping sport has by implementing several safeguards reduced the importance of nationalistic biases to a minimum.
 
 As has been pointed out in previous research, biases in evaluations need not result from conscious actions by the judges. In related research on hiring practices in symphony orchestras [cf. @fasang_recruitment_2006], researchers have claimed that evaluators have non-conscious schemata based on external factors such as gender, which affect the perception of performances and which can be removed by blinded evaluations. In a similar manner, judge evaluations in sport contests can be affected by non-conscious biases. A judge may over- or underrate an athlete's performance based on her or his nationality, or the judge may use the behaviour of the audience as information on this performance. In such cases, ways to minimize the effects of such factors should be promoted to reduce the effects of biases on evaluations.
 
 # CONCLUSION
 
-In this paper, we report an analysis of data from the entire FIS World Cup 2006/2007 and 2007/2008 seasons in Nordic ski jumping. Our overarching research question is whether there is nationalistic biases in ski jumping, and whether there are systematic variations in such bias when influences of the actual performance are ruled out. From our results, we confirm a tenet of the extant literature, and document nationalistic biases in judges’ evaluations. The biases were generally small, and do not seem to pose a major threat to the validity of results from skijumping competitions. However, in league or series-type competition tournaments, the cumulative effects of nationalistic bias may be important. An important takeaway from this study is that the system of regulations in ski jumping that is already in place most likely provide adequate mitigation of judges' nationalist impulses so that the objectivity and fairness of the results are not threatened.
+In this paper, we report an analysis of data from the 2006-2008 and 2015/2016 seasons of the FIS World Cup in Nordic ski jumping.  Our overarching research question is whether there is nationalistic biases in ski jumping. In addition, we also consider whether there is still such bias when influences of the actual performance are ruled out, whether there are national variations in how strong the biases are, due for example to the different positions of ski jumping in national sports fields, and whether they change over time, possibly due to the increased professionalization of the sport.
 
-Biases in subjective evaluations of judges and referees may carry important implications for sports results, as exemplified by findings of potential effects on final rankings of athletes or on betting markets [@larsen_racial_2008, @price_racial_2010]. 
+From our results, we confirm a major tenet of the extant literature, and document nationalistic biases in judges’ evaluations of ski jumping performances. The biases persist even when we use sophisticated fixed effects methods to remove performance-related confounders. There is also quite a bit of variation in how strong biases are between nations, and this variation is seemingly related to the historical importance of ski jumping, with nations with a stronger historical ski jumping culture displaying somewhat lower biases. The mechanism generating this trend is less understood, but may be related to differential professionalization of ski jumping in the participating nations. However, we did not find any evidence that there is a change over the period we study in the magnitude of biases.
+
+The nationalistic biases are generally small, and do not seem to pose a major threat to the validity of results from skijumping competitions. However, in league or series-type competition tournaments, the cumulative effects of nationalistic bias may still be consequential. An important takeaway from this study is that the system of regulations in ski jumping that is already in place most likely provide adequate mitigation of judges' nationalist impulses so that the objectivity and fairness of the results are not threatened. Biases in subjective evaluations of judges and referees may carry important implications for sports results, as exemplified by findings of potential effects on final rankings of athletes or on betting markets [@larsen_racial_2008, @price_racial_2010]. 
 
 Knowledge of the sources of evaluative biases in competitive sports can potentially help us better understand biases and discriminatory practices in other fields, such as student and employee recruitment and the allocation of research grants. Our findings of nationalistic and home-field biases have provided evidence that, in particular when assessed together with other related findings, add to our understanding on bias-generating practices. This knowledge may aid sport organizations, as well as other types of organizations, in their control of similar biases, and produce fairer, performance evaluations in the future.
 
