@@ -1,0 +1,66 @@
+---
+title: "Response to EJSS reviewers' comments on manuscript #2019-0005-R1"
+output:
+  pdf_document:
+    keep_tex: yes
+    latex_engine: xelatex
+    template: /home/torkildl/Dropbox/Setups/thl/rmd-xelatex-template-memo.tex
+  html_document: default
+bibliography: /home/torkildl/Dropbox/Literature/thl-main-library.bib
+csl: /home/torkildl/Dropbox/Literature/csl-files/american-sociological-review.csl
+anonymous: yes
+fontsize: 12pt
+geometry: margin=2cm
+header-includes:
+    - \usepackage{placeins}
+    - \usepackage{dcolumn}
+    - \usepackage{tabularx}
+    - \usepackage{lscape}
+    - \usepackage{caption}
+fig_caption: false
+fig.align: "center"
+fig.width: 5
+---
+
+We are grateful for being granted the opportunity to revise and resubmit our manuscript. We have considered all the comments by both the reviewers and the Editor.
+
+In what follows, we respond to each of the comments and explain how we accordingly have adapted our work.
+
+Thank you for reading and commenting on our work!
+
+# Responses to comments made by reviewer \#3
+
+> I congratulate the authors for their revision and recommend to accept the paper with minor changes.
+
+> First of all I'd like to thank the authors for seriously considering the recommendations, which were certainly not easily to address from their initial perspective. Especially by incorporating more theoretical literature and applying it to their case, authors have made the paper much more accessible for readers of the EJSS. Of course, the theoretical framework still is not highly elaborate, but now there are some interesting and sensible suggestions how the topic and findings can be theorized. Thus the discussion has gained more substance, too. And the integration of more recent empirical data makes the analysis more convincing.
+
+>Apart from adressing the few corrections I have made in the pdf file, authors should check the new sections (p.5ff., 18ff.) for grammatical errors, or maybe let a native speaker revise those parts.
+
+We have re-read and corrected the relevant sections for typos. 
+
+# Responses to comments made by reviewer \#4
+
+>I like the revision. The passages to which the critical comments of Reviewer 2 referred have, in my opinion, been appropriately revised. I recommend to accept the paper with some minor changes:
+
+>Firstly, the authors use the term "nationalist bias" in the abstract and "nationalistic bias" in the text. I would recommend that the authors choose one of the two, preferably "nationalistic bias", as this term is (to my knowledge) more often used to describe actions.
+
+We now consistently refer to nationalistic bias throughout the manuscript.
+
+>Secondly, I would recommend to avoid using the terms "cultural" and "national" in the same context as on page 3. National and cultural are two different things and should not be confused conceptually. Since the text, as I understand it, is about a nationalistic bias, I would delete the terms "cultural" and "culturally" on page 3.
+
+We have rewritten the text and now avoid confusing nationalistic and cultural biases. 
+
+>Thirdly, there are several more types in the text. I would recommend that the revision be checked again grammatically and orthographically by a native speaker.
+
+We have re-read and corrected typos found throughout the manuscript.
+
+\medskip
+
+\noindent
+Thank you again to reviewers and Editors for comments on our manuscript!
+
+--The Authors
+
+\bigskip
+
+END.
